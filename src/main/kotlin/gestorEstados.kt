@@ -1,111 +1,97 @@
-// 1. Definimos los 6 estados de la máquina usando un enum
-enum class Estado {
-    IDLE,
-    CHOOSE,
-    ADDS,
-    PAYING,
-    MAKING,
-    SERVING
-}
+package org.example
 
-// 2. Clase para gestionar los estados de la máquina
-class GestorEstados {
+import org.example.CoffeeMachineState.*
 
-    // Guardamos el estado actual. Empieza siempre en IDLE (reposo).
-    var estadoActual: Estado = Estado.IDLE
 
-    // Función auxiliar para mostrar un error y volver a IDLE
-    fun mostrarError(mensaje: String) {
-        println("⚠️ ERROR: $mensaje")
-        println("🔄 Regresando al estado de reposo (IDLE)...")
-        estadoActual = Estado.IDLE
-        println("Estado actual: $estadoActual\n")
-    }
+object CoffeeMachine {
+    var currentState: CoffeeMachineState = Idle()
 
-    // Paso 1: Iniciar interacción (IDLE -> CHOOSE)
-    fun iniciarInteraccion() {
-        if (estadoActual == Estado.IDLE) {
-            estadoActual = Estado.CHOOSE
-            println("Estado actual: $estadoActual (Selecciona tu bebida)")
-        } else {
-            mostrarError("No puedes iniciar desde el estado $estadoActual")
-        }
-    }
+    fun gestorEstados(
+        monedero: Int = 0,
+        bebida: String = "Café Solo",
+        extras: String = "Sin extras",
+        pagoExitoso: Boolean = true
+    ): CoffeeMachineState {
 
-    // Paso 2: Elegir bebida (CHOOSE -> ADDS)
-    fun elegirBebida() {
-        if (estadoActual == Estado.CHOOSE) {
-            estadoActual = Estado.ADDS
-            println("Estado actual: $estadoActual (Añade extras o continúa)")
-        } else {
-            mostrarError("No puedes elegir bebida desde el estado $estadoActual")
-        }
-    }
+        println("\n--> [Estado actual: ${currentState::class.simpleName}]")
 
-    // Paso 3: Confirmar extras (ADDS -> PAYING)
-    fun confirmarExtras() {
-        if (estadoActual == Estado.ADDS) {
-            estadoActual = Estado.PAYING
-            println("Estado actual: $estadoActual (Procesando pago)")
-        } else {
-            mostrarError("No puedes confirmar extras desde el estado $estadoActual")
-        }
-    }
+        when (val state = currentState) {
 
-    // Paso 4: Realizar pago (PAYING -> MAKING)
-    fun realizarPago(pagoExitoso: Boolean) {
-        if (estadoActual == Estado.PAYING) {
-            if (pagoExitoso) {
-                estadoActual = Estado.MAKING
-                println("Estado actual: $estadoActual (Preparando el café)")
-            } else {
-                mostrarError("El pago ha sido rechazado")
+            // 1. Reposo
+            is Idle -> {
+                if (monedero > 0) {
+                    println("1. IDLE: Dinero recibido ($monedero€). Pasando a elegir bebida...")
+                    Thread.sleep(1000)
+                    currentState = Choose
+                } else {
+                    println("1. IDLE: La máquina está en reposo. Por favor, introduce dinero.")
+                }
             }
-        } else {
-            mostrarError("No puedes pagar desde el estado $estadoActual")
+
+            // 2. Selección
+            is Choose -> {
+                if (bebida.isNotBlank()) {
+                    println("2. CHOOSE: Has seleccionado '$bebida'. Pasando a añadidos...")
+                    Thread.sleep(1000)
+                    currentState = Adds(extras)
+                } else {
+                    lanzarError("No se ha elegido ninguna bebida.")
+                }
+            }
+
+            // 3. Añadidos / Sin añadidos
+            is Adds -> {
+                println("3. ADDS: Añadidos elegidos: '${state.extra}'. Pasando al pago...")
+                Thread.sleep(1000)
+                currentState = Paying
+            }
+
+            // 4. Pago
+            is Paying -> {
+                if (pagoExitoso) {
+                    println("4. PAYING: Pago correcto. Empezando preparación...")
+                    Thread.sleep(1000)
+                    currentState = MakingCoffee
+                } else {
+                    lanzarError("Pago rechazado. Fondos insuficientes o fallo de tarjeta.")
+                }
+            }
+
+            // 5. Preparación
+            is MakingCoffee -> {
+                println("5. MAKING: Preparando tu bebida... ¡Por favor, espera!")
+                Thread.sleep(2000)
+                currentState = ServingCoffee(bebida)
+            }
+
+            // 6. Servido
+            is ServingCoffee -> {
+                println("6. SERVING: Servido '${state.type}'. ¡Toma tu café y disfruta!")
+                Thread.sleep(1000)
+                currentState = Idle() // Regresa a reposo tras entregar la bebida
+            }
+
+            // Manejo de Error: Muestra mensaje y vuelve automáticamente a IDLE
+            is Error -> {
+                println("⚠️ ERROR: ${state.message}")
+                println("🔄 Volviendo al estado de reposo (IDLE)...")
+                Thread.sleep(1000)
+                currentState = Idle()
+            }
         }
+
+        return currentState
     }
 
-    // Paso 5: Finalizar preparación (MAKING -> SERVING)
-    fun terminarPreparacion() {
-        if (estadoActual == Estado.MAKING) {
-            estadoActual = Estado.SERVING
-            println("Estado actual: $estadoActual (Sirviendo bebida)")
-        } else {
-            mostrarError("Error al preparar la bebida")
-        }
+    // Función privada para saltar a estado de Error desde cualquier punto
+    private fun lanzarError(mensaje: String) {
+        println("❌ Ha ocurrido un error...")
+        currentState = Error(mensaje)
     }
 
-    // Paso 6: Entregar bebida (SERVING -> IDLE)
-    fun entregarBebida() {
-        if (estadoActual == Estado.SERVING) {
-            println("☕ ¡Aquí tienes tu café! ¡Que lo disfrutes!")
-            estadoActual = Estado.IDLE
-            println("Estado actual: $estadoActual\n")
-        } else {
-            mostrarError("No hay bebida lista para entregar")
-        }
+    fun clean() {
+        println("\nLimpiando la máquina...")
+        currentState = Idle()
+        println("Máquina limpia. Estado: $currentState")
     }
-}
-
-// 3. Función principal para probar en IntelliJ
-fun main() {
-    val gestor = GestorEstados()
-
-    println("=== PRUEBA 1: FLUJO COMPLETO CORRECTO ===")
-    gestor.iniciarInteraccion()
-    gestor.elegirBebida()
-    gestor.confirmarExtras()
-    gestor.realizarPago(pagoExitoso = true)
-    gestor.terminarPreparacion()
-    gestor.entregarBebida()
-
-    println("=== PRUEBA 2: ERROR EN EL PAGO ===")
-    gestor.iniciarInteraccion()
-    gestor.elegirBebida()
-    gestor.confirmarExtras()
-    gestor.realizarPago(pagoExitoso = false) // Falla el pago, salta mensaje y vuelve a IDLE
-
-    println("=== PRUEBA 3: ACCIÓN EN UN ESTADO INCORRECTO ===")
-    gestor.confirmarExtras() // Intenta añadir extras estando en IDLE
 }
