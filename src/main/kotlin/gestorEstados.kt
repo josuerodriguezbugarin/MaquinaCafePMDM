@@ -2,13 +2,12 @@ package org.example
 
 import org.example.CoffeeMachineState.*
 
-
 object CoffeeMachine {
     var currentState: CoffeeMachineState = Idle()
 
     fun gestorEstados(
         monedero: Int = 0,
-        bebida: String = "Café Solo",
+        bebida: Bebida = Bebida.CAFE_SOLO, // Se usa el Enum Bebida en lugar de String
         extras: String = "Sin extras",
         pagoExitoso: Boolean = true
     ): CoffeeMachineState {
@@ -30,13 +29,9 @@ object CoffeeMachine {
 
             // 2. Selección
             is Choose -> {
-                if (bebida.isNotBlank()) {
-                    println("2. CHOOSE: Has seleccionado '$bebida'. Pasando a añadidos...")
-                    Thread.sleep(1000)
-                    currentState = Adds(extras)
-                } else {
-                    lanzarError("No se ha elegido ninguna bebida.")
-                }
+                println("2. CHOOSE: Has seleccionado '${bebida.nombre}' (Precio: ${bebida.precio}€, Cantidad: ${bebida.cantidad}ml)")
+                Thread.sleep(1000)
+                currentState = Adds(extras) // Usa la variable extras pasada por parámetro
             }
 
             // 3. Añadidos / Sin añadidos
@@ -61,20 +56,20 @@ object CoffeeMachine {
             is MakingCoffee -> {
                 println("5. MAKING: Preparando tu bebida... ¡Por favor, espera!")
                 Thread.sleep(2000)
-                currentState = ServingCoffee(bebida)
+                currentState = ServingCoffee(bebida) // Pasa el objeto Bebida correcto
             }
 
             // 6. Servido
             is ServingCoffee -> {
-                println("6. SERVING: Servido '${state.type}'. ¡Toma tu café y disfruta!")
+                println("6. SERVING: Servido '${state.bebida.nombre}'. ¡Toma tu café y disfruta!") // Acceso correcto a state.bebida.nombre
                 Thread.sleep(1000)
                 currentState = Idle() // Regresa a reposo tras entregar la bebida
             }
 
             // Manejo de Error: Muestra mensaje y vuelve automáticamente a IDLE
             is Error -> {
-                println("⚠️ ERROR: ${state.message}")
-                println("🔄 Volviendo al estado de reposo (IDLE)...")
+                println("⚠️ Error: ${state.message}")
+                println("🔄 Volviendo al estado de reposo...")
                 Thread.sleep(1000)
                 currentState = Idle()
             }
@@ -83,7 +78,6 @@ object CoffeeMachine {
         return currentState
     }
 
-    // Función privada para saltar a estado de Error desde cualquier punto
     private fun lanzarError(mensaje: String) {
         println("❌ Ha ocurrido un error...")
         currentState = Error(mensaje)
