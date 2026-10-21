@@ -36,7 +36,7 @@ object CoffeeMachine {
 
             // 3. Añadidos / Sin añadidos
             is Adds -> {
-                println("3. ADDS: Añadidos elegidos: '${state.extra}'. Pasando al pago...")
+                println("3. ADDS: Añadidos elegidos: '${state.extra}'. Pasando al pago")
                 Thread.sleep(1000)
                 currentState = Paying
             }
@@ -44,7 +44,7 @@ object CoffeeMachine {
             // 4. Pago
             is Paying -> {
                 if (pagoExitoso) {
-                    println("4. PAYING: Pago correcto. Empezando preparación...")
+                    println("4. PAYING: Pago correcto. Empezando preparacion")
                     Thread.sleep(1000)
                     currentState = MakingCoffee
                 } else {
@@ -54,22 +54,22 @@ object CoffeeMachine {
 
             // 5. Preparación
             is MakingCoffee -> {
-                println("5. MAKING: Preparando tu bebida... ¡Por favor, espera!")
+                println("5. MAKING: Preparando tu bebida")
                 Thread.sleep(2000)
                 currentState = ServingCoffee(bebida) // Pasa el objeto Bebida correcto
             }
 
             // 6. Servido
             is ServingCoffee -> {
-                println("6. SERVING: Servido '${state.bebida.nombre}'. ¡Toma tu café y disfruta!") // Acceso correcto a state.bebida.nombre
+                println("6. SERVING: Servido '${state.bebida.nombre}'. Toma tu café y disfruta") // Acceso correcto a state.bebida.nombre
                 Thread.sleep(1000)
                 currentState = Idle() // Regresa a reposo tras entregar la bebida
             }
 
             // Manejo de Error: Muestra mensaje y vuelve automáticamente a IDLE
             is Error -> {
-                println("⚠️ Error: ${state.message}")
-                println("🔄 Volviendo al estado de reposo...")
+                println("Error: ${state.message}")
+                println("Volviendo al estado de reposo")
                 Thread.sleep(1000)
                 currentState = Idle()
             }
@@ -79,12 +79,12 @@ object CoffeeMachine {
     }
 
     private fun lanzarError(mensaje: String) {
-        println("❌ Ha ocurrido un error...")
+        println("Ha ocurrido un error")
         currentState = Error(mensaje)
     }
 
     fun clean() {
-        println("\nLimpiando la máquina...")
+        println("\nLimpiando la máquina")
         currentState = Idle()
         println("Máquina limpia. Estado: $currentState")
     }
